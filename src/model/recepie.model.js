@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { visibility } from "../utils/enum.js"
 
 const ingredientSchema = new mongoose.Schema({
     ingredient: {type: String, required: true},
@@ -22,20 +23,21 @@ const nutritionSchema = new mongoose.Schema({
 
 const recepieSchema = new mongoose.Schema({
     name : {type: String, required: true},
-    preparationTime: {type: Number, required: true},
-    cookingTime: {type: Number, required: true},
+    preparationTime: {type: mongoose.Schema.Types.Decimal128, required: true},
+    cookingTime: {type: mongoose.Schema.Types.Decimal128, required: true},
     category: [{type: String, required: true}],
     cuisine: [{type: String, required: true}],
     ingredients: [{type: ingredientSchema, required: true}],
     instructions: [{type: String, required: true}],
     cookingMethods: [{type: String, required: true}],
-    implements: [{type: String, required: true}],
-    nutrition: [{type: nutritionSchema, required: true}],
+    tools: [{type: String, required: true}],
+    nutrition: {type: nutritionSchema, required: true},
     imageUrl: {type: String, required: true},
     creator: {type: mongoose.Schema.Types.ObjectId, ref: "user", required: true},
-    rating: {type: Number, required: true},
-    numberBookmarks: {type: Number, required: true},
-    numberReview: {type: Number, required: true}
+    rating: {type: mongoose.Schema.Types.Decimal128, required: false, default: 0.0},
+    numberBookmarks: {type: Number, required: false, default: 0},
+    numberReviews: {type: Number, required: false, default: 0},
+    visibility: {type: String, required: false, enum: [visibility.PRIVATE, visibility.PUBLIC], default: visibility.PRIVATE}
 },{
     timestamps: true,
     toJSON: {
@@ -43,7 +45,11 @@ const recepieSchema = new mongoose.Schema({
             delete ret.__v;
         }
     }
+    
 });
+
+
+
 
 const recepieModel = mongoose.model("recepie", recepieSchema);
 

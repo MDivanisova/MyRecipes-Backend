@@ -2,8 +2,9 @@ import mongoose from "mongoose";
 import {role} from "../utils/enum.js";
 
 const roleSchema = new mongoose.Schema({
-    roleNow: {type: String, required: true, enum: [role.ADMINISTRATOR, role.VIEWER, role.CHIEF, role.ASISTANTCHIEF]},
-    Permission: [{type: String, required: true}]
+    roleName: {type: String, required: true, 
+        enum: [role.ADMIN.roleName, role.USERADMINISTRATOR.roleName, role.CHIEF.roleName, role.REGULARUSER.roleName, role.CONTENTMANAGER.roleName]},
+    permission: [{type: String, required: true}]
 },{
     timestamps: false,
     toJSON: {
