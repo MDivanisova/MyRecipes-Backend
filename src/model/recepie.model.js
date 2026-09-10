@@ -33,7 +33,7 @@ const recepieSchema = new mongoose.Schema({
     tools: [{type: String, required: true}],
     nutrition: {type: nutritionSchema, required: true},
     imageUrl: {type: String, required: true},
-    creator: {type: mongoose.Schema.Types.ObjectId, ref: "user", required: true},
+    creator: {type: mongoose.Schema.Types.ObjectId, ref: "user", required: false},
     rating: {type: mongoose.Schema.Types.Decimal128, required: false, default: 0.0},
     numberBookmarks: {type: Number, required: false, default: 0},
     numberReviews: {type: Number, required: false, default: 0},

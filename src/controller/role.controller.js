@@ -13,7 +13,7 @@ const getRoles = async(req, res)=>{
 const editUsersRole = async(req, res)=>{
     const userId = req.body.userId;
     const role = req.body.role;
-    console.log(userId +" "+ role);
+    
     const val = await roleEditSchema.parse({_id: userId, role: role});
 
     const response = await editUsersRoleService(userId, role);

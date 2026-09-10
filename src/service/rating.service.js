@@ -1,10 +1,42 @@
+import mongoose from "mongoose";
 import ratingModel from "../model/rating.model.js"
 import recepieModel from "../model/recepie.model.js"
+import reviewModel from "../model/review.model.js";
 import { createRatingForRecepieService } from "./recepie.service.js"
+
+
+const getRatingService = async  (userId, recipeId)=>{
+
+    const existingRating = await ratingModel.findOne({rater: userId, rated: recipeId})
+                                            .populate("rater", "name");
+    const existingReview = await reviewModel.findOne({reviewed: recipeId, reviewer:userId})
+                                            .populate("reviewer", "name");
+    
+
+    if(!existingRating){
+        return{
+            "msg": "user has not rated this recipe.",
+            "statusCode": 409
+        }
+    }
+    if(!existingReview){
+        return{
+            "msg": "user has not reviewd this recipe.",
+            "statusCode": 409
+        }
+    }
+    return {
+        "msg": "user rated recipe",
+        "rating": existingRating,
+        "reviewe": existingReview,
+        "statusCode": 200
+    }
+}
 
 const createRatingService = async(rating, rater, rated)=>{
     const existingRating = await ratingModel.findOne({rater: rater, rated: rated}) 
     const existingRecepie = await recepieModel.findOne({_id: rated})
+
     if(!existingRecepie){
         return{
             "msg": "recepie doesn't exist",
@@ -14,7 +46,7 @@ const createRatingService = async(rating, rater, rated)=>{
     if(existingRating){
         return {
             "msg": "this recepie is already rated by the user",
-            "statusCode": 404
+            "statusCode": 409
         }
     }
 
@@ -108,9 +140,64 @@ const deleteRatingsService = async (ratings) =>{
     }
 }
 
+
+
+const getRatingStatisticsService = async (recipeId) => {
+
+    const rat = await ratingModel.find({rated:recipeId});
+
+    const ratings = await ratingModel.aggregate([
+
+        {
+            $match: {
+                rated: new mongoose.Types.ObjectId(recipeId)
+            }
+        },
+
+        {
+            $group: {
+                _id: "$rating",
+                count: { $sum: 1 }
+            }
+        }
+
+    ]);
+
+    const ratingStatistics = {
+        5: 0,
+        4: 0,
+        3: 0,
+        2: 0,
+        1: 0,
+        all: 0
+    };
+
+    ratings.forEach((rating) => {
+
+        ratingStatistics[rating._id] = rating.count;
+
+        ratingStatistics.all += rating.count;
+
+    });
+
+    return {
+        "ratings": ratingStatistics,
+        "statusCode": 200
+    };
+}
+
+
+
+
+
+
+
+
 export {
     createRatingService,
     editRatingService,
     deleteRatingService,
-    deleteRatingsService
+    deleteRatingsService,
+    getRatingService,
+    getRatingStatisticsService
 }

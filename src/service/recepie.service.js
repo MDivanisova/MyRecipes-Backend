@@ -113,7 +113,8 @@ const editRecepieService = async(recepieId,
 }
 
 const getRecepieService = async(recepieId)=>{
-    const existingRecepie = await recepieModel.findOne({_id: recepieId});
+    const existingRecepie = await recepieModel.findOne({_id: recepieId}).populate("creator","name");
+
     if(!existingRecepie){
         return{
             "msg": "recepie doesn't exist",
@@ -270,18 +271,28 @@ const getUsersRatingForRecepieService = async(user, recepieId)=>{
     }
 }
 
-const getAllRecepiesService = async (pageNumber, pageSize, filter, userId) => {
+const getAllRecepiesService = async (pageNumber, pageSize, filter, userId, numOfRecomended) => {
 
-    const skip = (pageNumber - 1) * pageSize;
+    // Globalniot opseg na pozicii za ovaa stranica
+    // (0-indeksirano, vo "virtuelniot" spoen niz: recommended + regular)
+    const rangeStart = (pageNumber - 1) * pageSize - numOfRecomended;
+    const rangeEnd = pageNumber * pageSize - numOfRecomended;
+
+    // Kolku od regularnite recepti da se preskoknat / da se zemat
+    const skip = Math.max(0, rangeStart);
+    const limit = Math.max(0, rangeEnd - skip);
 
     const recepies = await recepieModel.find(filter)
-                                        .populate("creator")
-                                        .skip(skip)
-                                        .limit(pageSize)
-                                        .sort({ createdAt: -1 });
+        .skip(skip)
+        .limit(limit)
+        .populate("creator")
+        .sort({
+            createdAt: -1,
+            name: 1
+        });
 
 
-    const bookmarks = await bookmarkModel.find({ user:userId });
+    const bookmarks = await bookmarkModel.find({ user: userId });
 
 
     const bookmarkedIds = bookmarks.map(bookmark =>
@@ -300,7 +311,11 @@ const getAllRecepiesService = async (pageNumber, pageSize, filter, userId) => {
 
     const numRecepies = await recepieModel.countDocuments(filter);
 
-    const totalPages = Math.ceil(numRecepies / pageSize);
+    // Vkupniot broj na strani se smeta vrz osnova na
+    // kombiniraniot broj (recommended + regular)
+    const totalPages = Math.ceil(
+        (numRecepies + numOfRecomended) / pageSize
+    );
 
 
     return {

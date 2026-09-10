@@ -1,6 +1,48 @@
-import { createCommentService, editCommentService, deleteCommentService } from "../service/comment.service.js"
+import { createCommentService, editCommentService, deleteCommentService, getCommentsService, likeCommentService, dislikeCommentService } from "../service/comment.service.js"
 import { commentSchema, editCommentSchema } from "../utils/comment.validation.js";
 import { idSchema } from "../utils/validation.js"
+
+
+const getComments = async(req, res)=>{
+    const user = req.user._id;
+    const reviewId = req.params.id;
+    const skip = parseInt(req.query.skip);
+    const limit = parseInt(req.query.limit);
+
+    const response = await getCommentsService(user, reviewId, skip, limit);
+
+    return res.status(response.statusCode).json({
+        "msg": response.msg,
+        "comments": response.comments,
+        "moreAvailable": response.moreAvailable
+    })
+}
+
+const likeComment = async (req, res)=>{
+    const user = req.user._id;
+    const comment = req.params.id;
+
+    const val = idSchema.parse({_id:comment});
+
+    const response = await likeCommentService(user, comment);
+
+    return res.status(response.statusCode).json({
+        "msg": response.msg
+    })
+}
+
+const dislikeComment = async (req, res)=>{
+    const user = req.user._id;
+    const comment = req.params.id;
+
+    const val = idSchema.parse({_id:comment});
+
+    const response = await dislikeCommentService(user, comment);
+
+    return res.status(response.statusCode).json({
+        "msg": response.msg
+    })
+}
 
 const createComment = async(req, res)=>{
     const user = req.user._id;
@@ -46,5 +88,8 @@ const deleteComment = async(req, res)=>{
 export{
     createComment,
     editComment,
-    deleteComment
+    deleteComment,
+    getComments,
+    likeComment,
+    dislikeComment
 }

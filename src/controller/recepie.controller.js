@@ -197,6 +197,7 @@ const getAllRecepies = async(req, res)=>{
     
         const pageNumber = parseInt(req.query.pageNumber);
         const pageSize = parseInt(req.query.pageSize);
+        const numOfRecomended = parseInt(req.query.numOfRecomended);
 
         let filter = {};
 
@@ -241,7 +242,7 @@ const getAllRecepies = async(req, res)=>{
             }
         }
 
-    const response = await getAllRecepiesService(pageNumber, pageSize, filter, req.user._id);
+    const response = await getAllRecepiesService(pageNumber, pageSize, filter, req.user._id, numOfRecomended);
     return res.status(response.statusCode).json({
         "msg": response.msg,
         "result": response.result

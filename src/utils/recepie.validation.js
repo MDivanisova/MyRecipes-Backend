@@ -32,7 +32,7 @@ const recepieSchema = z.object({
     cookingMethods: z.array(z.string()).min(1),
     tools: z.array(z.string()).min(1),
     nutrition: nutritionSchema,
-    imageUrl: z.string().max(12000,""),
+    imageUrl: z.string().min(1, "recepieUrl is required").max(12000,""),
     creator: z.hex().min(24, "creator must be 24 characters").max(24),
     visibility: z.enum([visibility.PUBLIC, visibility.PRIVATE]),
 
@@ -40,7 +40,7 @@ const recepieSchema = z.object({
 
 const editRecepieSchema = z.object({
     _id: z.hex().min(24,"recepieId must be 24 characters").max(24,"recepieId must be 24 characters"),
-    name: z.string().min(7,"name must be at least 7 characters").max(50,"name can't be more than 50 characters"),
+    name: z.string().min(3,"name must be at least 3 characters").max(50,"name can't be more than 50 characters"),
     preparationTime : z.number().min(0),
     cookingTime: z.number().min(0),
     category: z.array(z.string()).min(1),
@@ -50,7 +50,7 @@ const editRecepieSchema = z.object({
     cookingMethods: z.array(z.string()).min(1),
     tools: z.array(z.string()).min(1),
     nutrition: nutritionSchema,
-    imageUrl: z.string().max(12000,""),
+    imageUrl: z.string().min(1, "recepieUrl is required").max(12000,""),
     creator: z.hex().min(24, "creator must be 24 characters").max(24),
     visibility: z.enum([visibility.PUBLIC, visibility.PRIVATE]),
 })

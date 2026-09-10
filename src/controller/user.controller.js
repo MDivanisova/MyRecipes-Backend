@@ -75,7 +75,14 @@ const getUsersRecepies = async(req, res)=>{
 
     const pageNumber = parseInt(req.query.pageNumber);
     const pageSize = parseInt(req.query.pageSize);
-    const user = req.user._id;
+
+    let user = req.query.userId;
+    let flag = true;
+    if(user === undefined){
+       user = req.user._id;
+       flag = false; 
+    }
+
 
     let filter = {};
 
@@ -86,11 +93,16 @@ const getUsersRecepies = async(req, res)=>{
         };
     }
 
-    if (req.query.visibility !== "all") {
+    if (flag && req.query.visibility === "all") {
         filter = {
-            ...filter,
-            visibility: req.query.visibility
-        };
+                ...filter,
+                visibility: "public"
+            };
+    } else if (!flag && req.query.visibility !== "all") {
+            filter = {
+                ...filter,
+                visibility: req.query.visibility
+            };
     }
 
     const response = await getUsersRecepiesService( user, pageNumber, pageSize, filter);
@@ -109,7 +121,7 @@ const register = async(req, res)=>{
     const password = req.body.password;
     const gender = req.body.gender;
 
-    const val = await registerSchema.parse({name: name, email: email, password: password, gender: gender})
+    registerSchema.parse({name: name, email: email, password: password, gender: gender})
     
     const result = await registerService(name, email, password, gender);
 
@@ -180,8 +192,9 @@ const deleteUser = async(req, res)=>{
 }
 
 const getUser = async(req, res)=>{
-    const userId = req.user._id;
+    const userId = req.query.userId || req.user._id;
 
+    const resp = idSchema.parse({_id:userId})
     const response = await getUserService(userId);
 
     return res.status(response.statusCode).json({

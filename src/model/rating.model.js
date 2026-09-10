@@ -5,7 +5,7 @@ const ratingSchema = new mongoose.Schema({
     rater: {type: mongoose.Schema.Types.ObjectId, ref:"user", required: true},
     rated: {type: mongoose.Schema.Types.ObjectId, ref:"recepie", required: true}
 },{
-   timestamp: true,
+   timestamps: true,
    toJSON: {
     transform: function(doc, ret){
         delete ret.__v;

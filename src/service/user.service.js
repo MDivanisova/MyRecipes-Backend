@@ -48,6 +48,7 @@ const loginService = async(email, password)=>{
         "token": jwToken,
         "statusCode": 200,
         "user": {
+            _id: existingUser._id,
             name: existingUser.name,
             email: existingUser.email,
             gender: existingUser.gender,
