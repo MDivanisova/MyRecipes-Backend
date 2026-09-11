@@ -1,23 +1,20 @@
 {
-  "version": 2,
-  "functions": {
-    "api/index.js": {
-      "maxDuration": 30
-    }
-  },
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "api/index.js"
-    }
-  ],
-  "crons": [
-    {
-        "path": "/api/recommendation/makeRecommended",
-        "schedule": "0 16 * * *"
-    }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  }
+    "version": 2,
+    "functions": {
+        "api/index.js": {
+            "maxDuration": 30
+        }
+    },
+    "routes": [
+        {
+            "src": "/(.*)",
+            "dest": "/api/index.js"
+        }
+    ],
+    "crons": [
+        {
+            "path": "/api/recommendation/makeRecommended",
+            "schedule": "0 20 * * *"
+        }
+    ]
 }
