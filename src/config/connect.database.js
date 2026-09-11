@@ -1,10 +1,10 @@
 import mongoose from "mongoose"
 import { env } from "./config.env.js"
 
-const connectDb=()=>{
+const connectDb= async ()=>{
     try{
         console.log("Mongo URI exists:", !!env.DATABASE);
-        mongoose.connect(env.DATABASE);
+        await mongoose.connect(env.DATABASE);
         console.log("Connected to databse.")
     }
     catch(err){
