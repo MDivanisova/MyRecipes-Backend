@@ -3,6 +3,7 @@ import { env } from "./config.env.js"
 
 const connectDb=()=>{
     try{
+        console.log("Mongo URI exists:", !!env.DATABASE);
         mongoose.connect(env.DATABASE);
         console.log("Connected to databse.")
     }
