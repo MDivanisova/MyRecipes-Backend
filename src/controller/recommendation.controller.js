@@ -60,9 +60,9 @@ export const getRecommendationsController = async (req, res) => {
     };
 
 export const makeRecommendedController = async (req, res) => {
-    
+    console.time("recommendations");
     const resp = await makeRecommendedForAllUsers(0.85);
-
+    console.timeEnd("recommendations");
     return res.status(200).json(resp);
 
 }

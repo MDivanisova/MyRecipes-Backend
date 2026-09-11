@@ -804,7 +804,7 @@ export const makeRecommendedForAllUsers = async (minScore, limit = 10) => {
 
     for (const user of users) {
 
-        await makeRecommendationsForUser(
+        await getRecommendationsService(
             user._id,
             minScore,
             limit
