@@ -43,7 +43,7 @@ app.use(`${env.BASEPATH}/review`, authMidler, reviewRouter );
 app.use(`${env.BASEPATH}/role`, authMidler, roleRouter);
 app.use(`${env.BASEPATH}/user`, userRouter);
 app.use(`${env.BASEPATH}/statistic`, authMidler, statisticRouter);
-app.use(`${env.BASEPATH}/recommendation`, authMidler, recommendationRouter);
+app.use(`${env.BASEPATH}/recommendation`, recommendationRouter);
 
 app.use(errorHandler);
 connectDb();

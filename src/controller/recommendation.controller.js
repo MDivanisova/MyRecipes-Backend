@@ -1,4 +1,4 @@
-import {getAllRecommendationsService, getRecommendationsService} from "../service/recommendation.service.js"
+import {getAllRecommendationsService, makeRecommendedForAllUsers} from "../service/recommendation.service.js"
 
 
 export const getRecommendationsController = async (req, res) => {
@@ -60,9 +60,8 @@ export const getRecommendationsController = async (req, res) => {
     };
 
 export const makeRecommendedController = async (req, res) => {
-    const userId = req.user._id;
     
-    const resp = await getRecommendationsService(userId, 0.85);
+    const resp = await makeRecommendedForAllUsers(0.85);
 
     return res.status(200).json(resp);
 

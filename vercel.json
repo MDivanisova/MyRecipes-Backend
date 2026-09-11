@@ -11,6 +11,12 @@
       "dest": "api/index.js"
     }
   ],
+  "crons": [
+    {
+        "path": "/api/recommendation/makeRecommended",
+        "schedule": "0 16 * * *"
+    }
+  ],
   "env": {
     "NODE_ENV": "production"
   }

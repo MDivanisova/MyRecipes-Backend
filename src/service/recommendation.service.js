@@ -2,6 +2,7 @@ import recepieModel from "../model/recepie.model.js";
 import ratingModel from "../model/rating.model.js";
 import bookmarkModel from "../model/bookmark.model.js";
 import recommendationModel from "../model/recommendation.model.js";
+import userModel from "../model/user.model.js";
 
 const BOOKMARK_WEIGHT = 0.5;
 
@@ -619,9 +620,7 @@ function calculatePreferenceSimilarity(
 // Get recommendations
 // ----------------------------------------
 
-export const getRecommendationsService =
-    async (userId,minScore, limit = 10) => {
-
+const getRecommendationsService = async (userId,minScore, limit = 10) => {
         // --------------------------------
         // Get bookmarks
         // --------------------------------
@@ -680,7 +679,7 @@ export const getRecommendationsService =
 
         if (interactions.length < 5) {
 
-            return await recepieModel
+            const recipes =  await recepieModel
                 .find({
                     visibility: "public",
                     _id: {$nin: interactions.map(interaction => interaction.recipe._id)}
@@ -690,6 +689,24 @@ export const getRecommendationsService =
                     numberBookmarks: -1
                 })
                 .limit(limit);
+
+
+
+                await recommendationModel.findOneAndUpdate(
+                {
+                    forUser: userId
+                },
+                {
+                    forUser: userId,
+                    recommendations: recipes.map(
+                        recipe => recipe._id
+                    )
+                },
+                {
+                    upsert: true,
+                    new: true
+                }
+            );
         }
 
 
@@ -762,13 +779,43 @@ export const getRecommendationsService =
             recommendation => recommendation.recipe._id
         );
 
-        await recommendationModel.create({
-            forUser: userId,
-            recommendations: recommendationIds
-        });
-
-        return {"msg":"done!"};
+        await recommendationModel.findOneAndUpdate(
+            {
+                forUser: userId
+            },
+            {
+                forUser: userId,
+                recommendations: recommendationIds
+            },
+            {
+                upsert: true,
+                new: true
+            }
+        );
     };
+
+export const makeRecommendedForAllUsers = async (minScore, limit = 10) => {
+
+    const users =
+        await userModel.find({
+            isVerified: true
+        }).select("_id");
+
+
+    for (const user of users) {
+
+        await makeRecommendationsForUser(
+            user._id,
+            minScore,
+            limit
+        );
+    }
+
+
+    return {
+        msg: "Recommendations created for all verified users"
+    };
+}; 
 
 
 export const getAllRecommendationsService = async (
