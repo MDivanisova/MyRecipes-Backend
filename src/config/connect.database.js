@@ -11,6 +11,7 @@ const connectDb= async ()=>{
     }
     catch(err){
         console.log(`Databse threw the follwoing error: ${err}`)
+        console.log("Reason:", err.reason);
         process.exit(0);
     }
     
