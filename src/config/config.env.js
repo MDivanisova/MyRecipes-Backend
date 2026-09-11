@@ -1,6 +1,6 @@
 
 const env={
-    DATABASE : process.env.DATABASE,
+    DATABASE : process.env.MONGO_URI,
     PORT : process.env.PORT,
     ENVIORMENT: process.env.ENVIORMENT,
     BASEPATH: process.env.BASEPATH,
