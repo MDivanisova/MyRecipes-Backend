@@ -9,10 +9,17 @@ const connectDb= async ()=>{
         await mongoose.connect(env.DATABASE);
         console.log("Connected to databse.")
     }
-    catch(err){
-        console.log(`Databse threw the follwoing error: ${err}`)
-        console.log("Reason:", err.reason);
-        process.exit(0);
+    catch(error){
+        console.log("Database threw the following error:", error);
+
+    console.log("Name:", error.name);
+    console.log("Message:", error.message);
+    console.log("Code:", error.code);
+    console.log("Reason:");
+
+    console.dir(error.reason, {
+        depth: 10
+    });
     }
     
 }
