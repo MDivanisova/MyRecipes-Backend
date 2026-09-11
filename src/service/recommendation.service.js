@@ -55,6 +55,61 @@ function normalizeArray(array) {
 
 
 // ----------------------------------------
+// Normalize preference values
+// ----------------------------------------
+
+function normalizePreferences(preferences) {
+
+    const values =
+        Object.values(preferences);
+
+    if (!values.length) {
+        return {};
+    }
+
+    const maxPositiveValue =
+        Math.max(
+            ...values.filter(value => value > 0),
+            0
+        );
+
+    const maxNegativeValue =
+        Math.abs(
+            Math.min(
+                ...values.filter(value => value < 0),
+                0
+            )
+        );
+
+    const normalizedPreferences = {};
+
+    Object.entries(preferences)
+        .forEach(([key, value]) => {
+
+            if (value > 0 && maxPositiveValue > 0) {
+
+                normalizedPreferences[key] =
+                    value / maxPositiveValue;
+
+            } else if (
+                value < 0 &&
+                maxNegativeValue > 0
+            ) {
+
+                normalizedPreferences[key] =
+                    value / maxNegativeValue;
+
+            } else {
+
+                normalizedPreferences[key] = 0;
+            }
+        });
+
+    return normalizedPreferences;
+}
+
+
+// ----------------------------------------
 // Get total recipe time
 // ----------------------------------------
 
@@ -69,6 +124,33 @@ function getRecipeTotalTime(recipe) {
     );
 
     return preparationTime + cookingTime;
+}
+
+
+// ----------------------------------------
+// Parse nutrition value
+// ----------------------------------------
+
+function parseNutritionValue(value) {
+
+    if (value === null || value === undefined) {
+        return 0;
+    }
+
+    if (typeof value === "number") {
+        return Number.isFinite(value)
+            ? value
+            : 0;
+    }
+
+    const match =
+        String(value).match(/-?\d+(\.\d+)?/);
+
+    if (!match) {
+        return 0;
+    }
+
+    return Number(match[0]);
 }
 
 
@@ -216,10 +298,12 @@ function calculateNutritionSimilarity(
     fields.forEach(field => {
 
         const recipeValue =
-            Number(recipe.nutrition[field]);
+            parseNutritionValue(
+                recipe.nutrition[field]
+            );
 
         const userValue =
-            Number(userProfile.averageNutrition[field]);
+            userProfile.averageNutrition[field];
 
         if (
             Number.isNaN(recipeValue) ||
@@ -421,7 +505,9 @@ function buildUserProfile(interactions) {
                 .forEach(field => {
 
                     const value =
-                        Number(recipe.nutrition[field]);
+                        parseNutritionValue(
+                            recipe.nutrition[field]
+                        );
 
                     if (
                         !Number.isNaN(value) &&
@@ -462,10 +548,25 @@ function buildUserProfile(interactions) {
 
     return {
 
-        cuisinePreferences,
-        categoryPreferences,
-        ingredientPreferences,
-        cookingMethodPreferences,
+        cuisinePreferences:
+            normalizePreferences(
+                cuisinePreferences
+            ),
+
+        categoryPreferences:
+            normalizePreferences(
+                categoryPreferences
+            ),
+
+        ingredientPreferences:
+            normalizePreferences(
+                ingredientPreferences
+            ),
+
+        cookingMethodPreferences:
+            normalizePreferences(
+                cookingMethodPreferences
+            ),
 
         averageCookingTime:
             totalTimeWeight > 0
@@ -529,20 +630,15 @@ function calculateRecipeScore(
         );
 
 
-    // --------------------------------
-    // Cooking methods
-    // --------------------------------
+   // --------------------------------
+// Cooking methods
+// --------------------------------
 
-    const userMethods =
-        Object.keys(
-            userProfile.cookingMethodPreferences
-        );
-
-    const cookingMethodScore =
-        calculateArraySimilarity(
-            methods,
-            userMethods
-        );
+const cookingMethodScore =
+    calculatePreferenceSimilarity(
+        methods,
+        userProfile.cookingMethodPreferences
+    );
 
 
     // --------------------------------
@@ -620,69 +716,81 @@ function calculatePreferenceSimilarity(
 // Get recommendations
 // ----------------------------------------
 
-const getRecommendationsService = async (userId,minScore, limit = 10) => {
-        // --------------------------------
-        // Get bookmarks
-        // --------------------------------
+const getRecommendationsService = async (
+    userId,
+    minScore,
+    limit,
+    recipes = null
+) => {
 
-        const bookmarks =
-            await bookmarkModel
-                .find({ user: userId })
-                .populate("recepie");
+    // --------------------------------
+    // Get bookmarks
+    // --------------------------------
 
-
-        // --------------------------------
-        // Get ratings
-        // --------------------------------
-
-        const ratings =
-            await ratingModel
-                .find({ rater: userId })
-                .populate("rated");
+    const bookmarks =
+        await bookmarkModel
+            .find({ user: userId })
+            .populate("recepie");
 
 
-        // --------------------------------
-        // Build interactions
-        // --------------------------------
+    // --------------------------------
+    // Get ratings
+    // --------------------------------
 
-        const interactions = [];
-
-
-        bookmarks.forEach(bookmark => {
-
-            if (bookmark.recepie) {
-
-                interactions.push({
-                    type: "bookmark",
-                    recipe: bookmark.recepie
-                });
-            }
-        });
+    const ratings =
+        await ratingModel
+            .find({ rater: userId })
+            .populate("rated");
 
 
-        ratings.forEach(rating => {
+    // --------------------------------
+    // Build interactions
+    // --------------------------------
 
-            if (rating.rated) {
-
-                interactions.push({
-                    type: "rating",
-                    rating: rating.rating,
-                    recipe: rating.rated
-                });
-            }
-        });
+    const interactions = [];
 
 
-        // --------------------------------
-        // New user
-        // --------------------------------
+    bookmarks.forEach(bookmark => {
 
-        if (interactions.length < 5) {
+        if (bookmark.recepie) {
 
-            const recipes =  await recepieModel
+            interactions.push({
+                type: "bookmark",
+                recipe: bookmark.recepie
+            });
+        }
+    });
+
+
+    ratings.forEach(rating => {
+
+        if (rating.rated) {
+
+            interactions.push({
+                type: "rating",
+                rating: rating.rating,
+                recipe: rating.rated
+            });
+        }
+    });
+
+
+    // --------------------------------
+    // New user
+    // --------------------------------
+
+    if (interactions.length < 10) {
+
+        const popularRecipes =
+            await recepieModel
                 .find({
                     visibility: "public",
-                    _id: {$nin: interactions.map(interaction => interaction.recipe._id)}
+                    _id: {
+                        $nin: interactions.map(
+                            interaction =>
+                                interaction.recipe._id
+                        )
+                    }
                 })
                 .sort({
                     rating: -1,
@@ -691,50 +799,63 @@ const getRecommendationsService = async (userId,minScore, limit = 10) => {
                 .limit(limit);
 
 
-
-                await recommendationModel.findOneAndUpdate(
-                {
-                    forUser: userId
-                },
-                {
-                    forUser: userId,
-                    recommendations: recipes.map(
+        await recommendationModel.findOneAndUpdate(
+            {
+                forUser: userId
+            },
+            {
+                forUser: userId,
+                recommendations:
+                    popularRecipes.map(
                         recipe => recipe._id
                     )
-                },
-                {
-                    upsert: true,
-                    new: true
-                }
-            );
-        }
+            },
+            {
+                upsert: true,
+                returnDocument: "after"
+            }
+        );
+
+        return;
+    }
 
 
-        // --------------------------------
-        // Build profile
-        // --------------------------------
+    // --------------------------------
+    // Build profile
+    // --------------------------------
 
-        const userProfile =
-            buildUserProfile(interactions);
-
-
-        
-        // --------------------------------
-        // IDs already interacted with
-        // --------------------------------
-
-        const interactedRecipeIds =
-            interactions.map(
-                interaction =>
-                    interaction.recipe._id
-            );
+    const userProfile =
+        buildUserProfile(interactions);
 
 
-        // --------------------------------
-        // Get public recipes
-        // --------------------------------
+    console.log("USER PROFILE");
+    console.log(
+        JSON.stringify(userProfile, null, 2)
+    );
 
-        const recipes =
+
+    // --------------------------------
+    // IDs already interacted with
+    // --------------------------------
+
+    const interactedRecipeIds =
+        interactions.map(
+            interaction =>
+                interaction.recipe._id.toString()
+        );
+
+
+    // --------------------------------
+    // Get recipes
+    // --------------------------------
+
+    let recipesToScore = recipes;
+
+    if (!recipesToScore) {
+
+        console.time("get recipes");
+
+        recipesToScore =
             await recepieModel
                 .find({
                     visibility: "public",
@@ -745,61 +866,112 @@ const getRecommendationsService = async (userId,minScore, limit = 10) => {
                         $nin: interactedRecipeIds
                     }
                 })
+                .select(
+                    "cuisine category ingredients cookingMethods preparationTime cookingTime nutrition"
+                )
                 .lean();
 
+        console.timeEnd("get recipes");
+    }
 
-        // --------------------------------
-        // Score recipes
-        // --------------------------------
 
-        const recommendations =
-            recipes
-                .map(recipe => {
+    // --------------------------------
+    // Score recipes
+    // --------------------------------
 
-                    const score =
-                        calculateRecipeScore(
-                            recipe,
-                            userProfile
-                        );
+    console.time("calculate scores");
 
-                    return {
-                        recipe,
-                        score
-                    };
-                })
-                .filter(item =>
-                    item.score > minScore
+    const recommendations =
+        recipesToScore
+            .filter(recipe =>
+                recipe.creator?.toString() !==
+                userId.toString()
+            )
+            .filter(recipe =>
+                !interactedRecipeIds.includes(
+                    recipe._id.toString()
                 )
-                .sort(
-                    (a, b) =>
-                        b.score - a.score
-                );
-        
-        const recommendationIds = recommendations.map(
-            recommendation => recommendation.recipe._id
+            )
+            .map(recipe => {
+
+                const score =
+                    calculateRecipeScore(
+                        recipe,
+                        userProfile
+                    );
+
+                return {
+                    recipe,
+                    score
+                };
+            })
+            .filter(item =>
+                item.score > minScore
+            );
+
+    console.timeEnd("calculate scores");
+
+
+    // --------------------------------
+    // Sort
+    // --------------------------------
+
+    console.time("sort");
+
+    recommendations.sort(
+        (a, b) =>
+            b.score - a.score
+    );
+
+    console.timeEnd("sort");
+
+
+    // --------------------------------
+    // Save recommendations
+    // --------------------------------
+
+    const recommendationIds =
+        recommendations.map(
+            recommendation =>
+                recommendation.recipe._id
         );
 
-        await recommendationModel.findOneAndUpdate(
-            {
-                forUser: userId
-            },
-            {
-                forUser: userId,
-                recommendations: recommendationIds
-            },
-            {
-                upsert: true,
-                new: true
-            }
-        );
-    };
 
-export const makeRecommendedForAllUsers = async (minScore, limit = 10) => {
-
+    await recommendationModel.findOneAndUpdate(
+        {
+            forUser: userId
+        },
+        {
+            forUser: userId,
+            recommendations: recommendationIds
+        },
+        {
+            upsert: true,
+            returnDocument: "after"
+        }
+    );
+};
+export const makeRecommendedForAllUsers = async (minScore, limit = 20) => {
+    console.log("Starting recommendation generation for all users...");
     const users =
         await userModel.find({
             isVerified: true
         }).select("_id");
+
+
+        console.time("get all recipes");
+
+        const recipes =
+        await recepieModel
+            .find({
+                visibility: "public"
+            })
+            .select(
+                "cuisine category ingredients cookingMethods preparationTime cookingTime nutrition creator"
+            )
+            .lean();
+
+    console.timeEnd("get all recipes");
 
 
     for (const user of users) {
@@ -807,7 +979,8 @@ export const makeRecommendedForAllUsers = async (minScore, limit = 10) => {
         await getRecommendationsService(
             user._id,
             minScore,
-            limit
+            limit,
+            recipes
         );
     }
 
@@ -885,8 +1058,7 @@ export const getAllRecommendationsService = async (
     const totalPages = Math.ceil(
         numRecepies / pageSize
     );
-    console.log(totalPages);
-    console.log(recommendedIds);
+
     return {
         msg: "recommendations were successfully fetched",
 
