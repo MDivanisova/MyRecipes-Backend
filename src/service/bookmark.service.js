@@ -93,18 +93,39 @@ const deleteBookmarkService = async(recepie, user)=>{
     
 }
 
-const deleteBookmarksService = async(bookmarks)=>{
-    const result = await bookmarkModel.deleteMany({_id:{$in: bookmarks}});
+const deleteBookmarksService = async (bookmarks) => {
 
-    if(result.deletedCount === bookmarks.length){
-        return {
-            "success": true,
+    const result = await bookmarkModel.deleteMany({
+        _id: {
+            $in: bookmarks.map(bookmark => bookmark._id)
         }
+    });
+
+    if (result.deletedCount !== bookmarks.length) {
+        return {
+            success: false
+        };
     }
+
+    const userUpdates = bookmarks.map(bookmark => ({
+        updateOne: {
+            filter: {
+                _id: bookmark.user
+            },
+            update: {
+                $inc: {
+                    bookmarks: -1
+                }
+            }
+        }
+    }));
+
+    await userModel.bulkWrite(userUpdates);
+
     return {
-        "success": false
-    }
-}
+        success: true
+    };
+};
 
 
 export {

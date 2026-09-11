@@ -1,6 +1,7 @@
 import recepieModel from "../model/recepie.model.js";
 import ratingModel from "../model/rating.model.js";
 import bookmarkModel from "../model/bookmark.model.js";
+import recommendationModel from "../model/recommendation.model.js";
 
 const BOOKMARK_WEIGHT = 0.5;
 
@@ -619,7 +620,7 @@ function calculatePreferenceSimilarity(
 // ----------------------------------------
 
 export const getRecommendationsService =
-    async (userId, limit = 10) => {
+    async (userId,minScore, limit = 10) => {
 
         // --------------------------------
         // Get bookmarks
@@ -750,12 +751,109 @@ export const getRecommendationsService =
                     };
                 })
                 .filter(item =>
-                    item.score > 0.865
+                    item.score > minScore
                 )
                 .sort(
                     (a, b) =>
                         b.score - a.score
                 );
+        
+        const recommendationIds = recommendations.map(
+            recommendation => recommendation.recipe._id
+        );
 
-        return recommendations;
+        await recommendationModel.create({
+            forUser: userId,
+            recommendations: recommendationIds
+        });
+
+        return {"msg":"done!"};
     };
+
+
+export const getAllRecommendationsService = async (
+    pageNumber,
+    pageSize,
+    userId,
+    filter
+) => {
+
+    const recommendation = await recommendationModel.findOne({
+        forUser: userId
+    });
+
+    if (!recommendation) {
+        return {
+            msg: "No recommendations found",
+            result: {
+                recepies: [],
+                pagination: {
+                    numRecepies: 0,
+                    totalPages: 0,
+                    pageNumber,
+                    pageSize
+                }
+            },
+            statusCode: 200
+        };
+    }
+
+    const numRecepies = recommendation.recommendations.length;
+
+    const skip = (pageNumber - 1) * pageSize;
+
+    const recommendedIds = recommendation.recommendations.slice(
+        skip,
+        skip + pageSize
+    );
+
+    const recepies = await recepieModel.find({
+        ...filter,
+        _id: {
+            $in: recommendedIds
+        }
+    })
+        .populate("creator")
+        .sort({
+            createdAt: -1,
+            name: 1
+        });
+
+    const bookmarks = await bookmarkModel.find({
+        user: userId
+    });
+
+    const bookmarkedIds = bookmarks.map(bookmark =>
+        bookmark.recepie.toString()
+    );
+
+    const recepiesWithBookmark = recepies.map(recepie => ({
+        ...recepie.toObject(),
+
+        isBookmarked: bookmarkedIds.includes(
+            recepie._id.toString()
+        )
+    }));
+
+    const totalPages = Math.ceil(
+        numRecepies / pageSize
+    );
+    console.log(totalPages);
+    console.log(recommendedIds);
+    return {
+        msg: "recommendations were successfully fetched",
+
+        result: {
+            recepies: recepiesWithBookmark,
+
+            pagination: {
+                numRecepies,
+                totalPages,
+                pageNumber,
+                pageSize
+            }
+        },
+
+        statusCode: 200
+    };
+};

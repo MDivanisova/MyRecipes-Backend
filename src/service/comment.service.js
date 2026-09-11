@@ -186,7 +186,11 @@ const deleteCommentService = async(comment, user)=>{
 }
 
 const deleteCommentsService = async(comments)=>{
-    const result = await commentModel.deleteMany({ _id: {$in: comments}});
+    const result = await commentModel.deleteMany({
+        _id: {
+            $in: comments.map(comment => comment._id)
+        }
+    });
 
     if(result.deletedCount === comments.length){
         return {

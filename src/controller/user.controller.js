@@ -183,7 +183,7 @@ const editUser = async(req, res)=>{
 const deleteUser = async(req, res)=>{
     const userId = req.body.userId;
 
-    const result = await idSchema.parse({_id: userId});
+    const result = idSchema.parse({_id: userId});
     const response = await deleteUserService(userId);
 
     return res.status(response.statusCode).json({

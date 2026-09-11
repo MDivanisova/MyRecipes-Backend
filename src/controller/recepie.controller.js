@@ -139,7 +139,7 @@ const deleteRecepie = async(req, res)=>{
     const recepieId = req.params.id;
     const user = req.user._id;
 
-    const val = await idSchema.parse({_id: recepieId});
+    const val = idSchema.parse({_id: recepieId});
 
     const result = await deleteRecepieService(recepieId, user);
 
@@ -197,7 +197,6 @@ const getAllRecepies = async(req, res)=>{
     
         const pageNumber = parseInt(req.query.pageNumber);
         const pageSize = parseInt(req.query.pageSize);
-        const numOfRecomended = parseInt(req.query.numOfRecomended);
 
         let filter = {};
 
@@ -242,7 +241,7 @@ const getAllRecepies = async(req, res)=>{
             }
         }
 
-    const response = await getAllRecepiesService(pageNumber, pageSize, filter, req.user._id, numOfRecomended);
+    const response = await getAllRecepiesService(pageNumber, pageSize, filter, req.user._id);
     return res.status(response.statusCode).json({
         "msg": response.msg,
         "result": response.result

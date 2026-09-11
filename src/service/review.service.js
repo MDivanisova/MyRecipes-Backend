@@ -272,7 +272,6 @@ const deleteReviewService = async(review, user)=>{
             "statusCode": 404
         }
     }
-
     const deletedComments = await deleteCommentsService(existingReview.comments);
     if(!deletedComments.success){
         return {
@@ -283,10 +282,10 @@ const deleteReviewService = async(review, user)=>{
     }
     await existingReview.deleteOne();
     
-    existingRecepie.reviewsWriten--;
+    existingRecepie.numberReviews--;
     await existingRecepie.save();
 
-    existingUser.numberReviews--;
+    existingUser.reviewsWriten--;
     existingUser.save()
 
     return {
@@ -296,19 +295,47 @@ const deleteReviewService = async(review, user)=>{
 
 }
 
-const deleteReviewsService = async(reviews)=>{
-    const res = await commentModel.deleteMany({review: {$in: reviews}})
-    const result = await reviewModel.deleteMany({ _id: {$in: reviews}});
-    
-        if(result.deletedCount === reviews.length){
-            return {
-                "success": true,
+const deleteReviewsService = async (reviews) => {
+
+    const reviewIds = reviews.map(review => review._id);
+
+    await commentModel.deleteMany({
+        review: {
+            $in: reviewIds
+        }
+    });
+
+    const result = await reviewModel.deleteMany({
+        _id: {
+            $in: reviewIds
+        }
+    });
+
+    if (result.deletedCount !== reviews.length) {
+        return {
+            success: false
+        };
+    }
+
+    const userUpdates = reviews.map(review => ({
+        updateOne: {
+            filter: {
+                _id: review.reviewer
+            },
+            update: {
+                $inc: {
+                    reviewsWriten: -1
+                }
             }
         }
-        return {
-            "success": false
-        }
-}
+    }));
+
+    await userModel.bulkWrite(userUpdates);
+
+    return {
+        success: true
+    };
+};
 
 export {
     createReviewService,

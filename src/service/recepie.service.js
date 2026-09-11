@@ -2,6 +2,7 @@ import bookmarkModel from "../model/bookmark.model.js"
 import ratingModel from "../model/rating.model.js";
 import recepieModel from "../model/recepie.model.js";
 import reviewModel from "../model/review.model.js";
+import userModel from "../model/user.model.js";
 import { deleteBookmarksService } from "./bookmark.service.js";
 import { deleteRatingsService } from "./rating.service.js";
 import { deleteReviewsService } from "./review.service.js";
@@ -121,7 +122,7 @@ const getRecepieService = async(recepieId)=>{
             "statusCode": 404
         }
     }
-
+    await createRatingForRecepieService(recepieId);
     return{
         "msg": "recepie sucessfully fetch",
         "statusCode": 200,
@@ -130,9 +131,10 @@ const getRecepieService = async(recepieId)=>{
 }
 
 const deleteRecepieService = async(recepieId, user)=>{
+    const existingUser = await userModel.find({_id:user}).populate("role");
     const existingRecepie = await recepieModel.findOne({_id: recepieId});
     
-    if(existingRecepie.creator != user){
+    if(existingRecepie.creator != user && existingUser.role.roleName !== "admin" && existingUser.role.roleName !== "contentManager" ){
         return{
             "msg": "you're not the owner of the recepie",
             "statusCode": 403
@@ -271,34 +273,26 @@ const getUsersRatingForRecepieService = async(user, recepieId)=>{
     }
 }
 
-const getAllRecepiesService = async (pageNumber, pageSize, filter, userId, numOfRecomended) => {
+const getAllRecepiesService = async (pageNumber, pageSize, filter, userId) => {
 
-    // Globalniot opseg na pozicii za ovaa stranica
-    // (0-indeksirano, vo "virtuelniot" spoen niz: recommended + regular)
-    const rangeStart = (pageNumber - 1) * pageSize - numOfRecomended;
-    const rangeEnd = pageNumber * pageSize - numOfRecomended;
-
-    // Kolku od regularnite recepti da se preskoknat / da se zemat
-    const skip = Math.max(0, rangeStart);
-    const limit = Math.max(0, rangeEnd - skip);
+    const skip = (pageNumber - 1) * pageSize;
 
     const recepies = await recepieModel.find(filter)
         .skip(skip)
-        .limit(limit)
+        .limit(pageSize)
         .populate("creator")
         .sort({
             createdAt: -1,
             name: 1
         });
 
-
-    const bookmarks = await bookmarkModel.find({ user: userId });
-
+    const bookmarks = await bookmarkModel.find({
+        user: userId
+    });
 
     const bookmarkedIds = bookmarks.map(bookmark =>
         bookmark.recepie.toString()
     );
-
 
     const recepiesWithBookmark = recepies.map(recepie => ({
         ...recepie.toObject(),
@@ -308,15 +302,11 @@ const getAllRecepiesService = async (pageNumber, pageSize, filter, userId, numOf
         )
     }));
 
-
     const numRecepies = await recepieModel.countDocuments(filter);
 
-    // Vkupniot broj na strani se smeta vrz osnova na
-    // kombiniraniot broj (recommended + regular)
     const totalPages = Math.ceil(
-        (numRecepies + numOfRecomended) / pageSize
+        numRecepies / pageSize
     );
-
 
     return {
         msg: "recipes were successfully fetched",

@@ -128,7 +128,7 @@ const deleteRatingService = async(ratingId)=>{
 }
 
 const deleteRatingsService = async (ratings) =>{
-    const result = await ratingModel.deleteMany({_id: {$in: ratings}});
+    const result = await ratingModel.deleteMany({_id: {$in: ratings.map(rating =>rating._id)}});
 
      if(result.deletedCount === ratings.length){
         return {

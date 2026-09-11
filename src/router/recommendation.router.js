@@ -1,10 +1,10 @@
 import express from "express";
-import {getRecommendationsController} from "../controller/recommendation.controller.js";
+import {getRecommendationsController, makeRecommendedController} from "../controller/recommendation.controller.js";
 
 const recommendationRouter = express.Router();
 
 
 recommendationRouter.get("/", getRecommendationsController);
-
+recommendationRouter.get("/makeRecommended", makeRecommendedController);
 
 export default recommendationRouter;
