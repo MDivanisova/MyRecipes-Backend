@@ -46,7 +46,7 @@ app.use(`${env.BASEPATH}/statistic`, authMidler, statisticRouter);
 app.use(`${env.BASEPATH}/recommendation`, recommendationRouter);
 
 app.use(errorHandler);
-connectDb();
+await connectDb();
 
 if(env.ENVIORMENT === 'DEVELOPMENT'){
     app.listen(env.PORT, ()=> {
