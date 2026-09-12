@@ -240,6 +240,10 @@ const getAllRecepies = async(req, res)=>{
                 }
             }
         }
+        filter = {
+            ...filter,
+            visibility: "public"
+        }
 
     const response = await getAllRecepiesService(pageNumber, pageSize, filter, req.user._id);
     return res.status(response.statusCode).json({

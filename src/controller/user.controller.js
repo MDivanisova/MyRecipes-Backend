@@ -97,12 +97,16 @@ const getUsersRecepies = async(req, res)=>{
         };
     }
 
-    if (flag && req.query.visibility === "all") {
+    if (req.query.visibility === "public") {
         filter = {
                 ...filter,
                 visibility: "public"
             };
-    } else if (!flag && req.query.visibility !== "all") {
+    }else if (req.query.visibility === "private" && flag) {
+        return res.status(403).json({
+            msg: "You are not authorized to view this user's private recepies."
+        });
+    } else if (!flag && req.query.visibility === "private") {
             filter = {
                 ...filter,
                 visibility: req.query.visibility
