@@ -11,9 +11,7 @@ const connectDb = async (req, res, next) => {
 
     try {
         console.log(`Mongo URI exists: ${!!env.DATABASE}`);
-        const db = await mongoose.connect(env.DATABASE, {
-            bufferCommands: false,
-        });
+        const db = await mongoose.connect(env.DATABASE);
         isConnected = db.connections[0].readyState === 1;
         console.log("Connected to database.");
         return next();
