@@ -1,27 +1,25 @@
 import { loginService, getUserBookmarksService, verifyService, resendCodeService, registerService, editUserService, deleteUserService, getUserService, getAllUsersService, getUsersRecepiesService } from "../service/user.service.js"
 import { registerSchema, loginScehama, resendCodeSchema, verifySchema, editUserSchema } from "../utils/user.validation.js"
 import { idSchema } from "../utils/validation.js";
-
+//hasdhashd
 const login = async(req, res)=>{
 
     const email = req.body.email;
     const password = req.body.password;
-    console.log("Email:", email);
-    console.log("Password:", password);
 
     const val =  await loginScehama.parse({email:email, password:password});
-    console.log("Validation result:", val);
     
     const result = await loginService(email,password);
-    console.log("Result:", result);
 
     return res.status(result.statusCode).json({
         "msg": result.msg,
         "token": result.token,
-        "user": result.user
+        "user": result.user,
+        "email": result.email,
     })
 
 }
+
 
 const getUserBookmarks = async(req, res)=>{
 
