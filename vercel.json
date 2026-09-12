@@ -15,7 +15,7 @@
     "crons": [
         {
             "path": "/api/recommendation/makeRecommended",
-            "schedule": "0 16 * * *"
+            "schedule": "0 15 * * *"
         }
     ],
     "env": {
