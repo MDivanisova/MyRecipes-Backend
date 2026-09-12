@@ -312,6 +312,7 @@ const editUserService = async(userId, name, email, gender, age, description)=>{
         }
     }
     let mailChange = false;
+    console.log(`Existing user email: ${existingUser.email} New email: ${email}`);
     if(existingUser.email != email){
         const existingEmail = await userModel.findOne({email: email})
         if(existingEmail){
@@ -322,6 +323,7 @@ const editUserService = async(userId, name, email, gender, age, description)=>{
        }
         existingUser.email = email;
         existingUser.isVerified = false;
+        console.log(`Email changed. Sending verification code to ${email}`);
         await resendCodeService(email);
        mailChange = true;
 
