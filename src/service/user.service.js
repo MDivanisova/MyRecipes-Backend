@@ -325,6 +325,7 @@ const editUserService = async(userId, name, email, gender, age, description)=>{
         existingUser.isVerified = false;
         console.log(`Email changed. Sending verification code to ${email}`);
         await resendCodeService(email);
+        console.log(`Verification code sent to ${email}`);
        mailChange = true;
 
     }
