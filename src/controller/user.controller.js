@@ -6,10 +6,14 @@ const login = async(req, res)=>{
 
     const email = req.body.email;
     const password = req.body.password;
+    console.log("Email:", email);
+    console.log("Password:", password);
 
     const val =  await loginScehama.parse({email:email, password:password});
-
+    console.log("Validation result:", val);
+    
     const result = await loginService(email,password);
+    console.log("Result:", result);
 
     return res.status(result.statusCode).json({
         "msg": result.msg,
