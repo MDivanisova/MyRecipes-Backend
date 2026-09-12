@@ -5,6 +5,7 @@ let isConnected = false;
 
 const connectDb = async (req, res, next) => {
     if (isConnected && mongoose.connection.readyState === 1) {
+        console.log("Already connected to database.");
         return;
     }
 
