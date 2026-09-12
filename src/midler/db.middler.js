@@ -3,7 +3,7 @@ import { env } from "../config/config.env.js";
 
 let isConnected = false;
 
-const connectDb = async (req, res, next) => {
+const connectDb = async () => {
     if (isConnected && mongoose.connection.readyState === 1) {
         console.log("Already connected to database.");
         return;
@@ -14,7 +14,6 @@ const connectDb = async (req, res, next) => {
         const db = await mongoose.connect(env.DATABASE);
         isConnected = db.connections[0].readyState === 1;
         console.log("Connected to database.");
-        next();
     } catch (error) {
         isConnected = false;
         console.log("Database threw the following error:", error);

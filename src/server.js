@@ -1,6 +1,5 @@
 import express from "express"
 import {env} from "./config/config.env.js"
-import {connectDb} from "./config/connect.database.js"
 import bookmarkRouter from "./router/bookmark.router.js"
 import commentRouter from "./router/comment.router.js"
 import ratingRouter from "./router/rating.router.js"
@@ -12,7 +11,7 @@ import userRouter from "./router/user.router.js"
 import { errorHandler } from "./midler/zod.handler.middler.js"
 import statisticRouter from "./router/statistic.router.js"
 import recommendationRouter from "./router/recommendation.router.js"
-import { connectDb as dbConnectMidler } from "./midler/db.middler.js"
+import { connectDb} from "./midler/db.middler.js"
  
 const app = express();
 
@@ -39,20 +38,20 @@ app.get('/', (req, res)=> {
 })
 
 
-app.use(`${env.BASEPATH}/bookmark`, dbConnectMidler, authMidler, bookmarkRouter);
-app.use(`${env.BASEPATH}/comment`, dbConnectMidler, authMidler, commentRouter);
-app.use(`${env.BASEPATH}/rating`, dbConnectMidler, authMidler, ratingRouter);
-app.use(`${env.BASEPATH}/recepie`, dbConnectMidler, authMidler, recepieRouter);
-app.use(`${env.BASEPATH}/review`, dbConnectMidler, authMidler, reviewRouter);
-app.use(`${env.BASEPATH}/role`, dbConnectMidler, authMidler, roleRouter);
-app.use(`${env.BASEPATH}/user`, dbConnectMidler, userRouter);
-app.use(`${env.BASEPATH}/statistic`, dbConnectMidler, authMidler, statisticRouter);
-app.use(`${env.BASEPATH}/recommendation`, dbConnectMidler, recommendationRouter);
+app.use(`${env.BASEPATH}/bookmark`, authMidler, bookmarkRouter);
+app.use(`${env.BASEPATH}/comment`,  authMidler, commentRouter);
+app.use(`${env.BASEPATH}/rating`, authMidler, ratingRouter);
+app.use(`${env.BASEPATH}/recepie`, authMidler, recepieRouter);
+app.use(`${env.BASEPATH}/review`, authMidler, reviewRouter);
+app.use(`${env.BASEPATH}/role`, authMidler, roleRouter);
+app.use(`${env.BASEPATH}/user`, userRouter);
+app.use(`${env.BASEPATH}/statistic`, authMidler, statisticRouter);
+app.use(`${env.BASEPATH}/recommendation`, recommendationRouter);
 
 app.use(errorHandler);
+ await connectDb();
 
 if(env.ENVIORMENT === 'DEVELOPMENT'){
-    await connectDb();
     app.listen(env.PORT, ()=> {
         console.log(`Server is running on http://localhost:${env.PORT}`)
     });
