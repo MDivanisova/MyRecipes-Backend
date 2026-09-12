@@ -312,7 +312,7 @@ const editUserService = async(userId, name, email, gender, age, description)=>{
         }
     }
     let mailChange = false;
-    
+
     if(existingUser.email != email){
         const existingEmail = await userModel.findOne({email: email})
         if(existingEmail){
@@ -340,7 +340,8 @@ const editUserService = async(userId, name, email, gender, age, description)=>{
 
     return {
         "msg": "User succesfully modifyed ",
-        "statusCode": mailChange ? 200: 201
+        "statusCode": mailChange ? 200: 201,
+        "email": existingUser.email
     }
 }
 

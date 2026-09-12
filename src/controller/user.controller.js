@@ -183,7 +183,8 @@ const editUser = async(req, res)=>{
     const response = await editUserService(userId, name, email, gender, age, description);
 
     return res.status(response.statusCode).json({
-        "msg": response.msg
+        "msg": response.msg,
+        "email": response.email
     })
 }
 
