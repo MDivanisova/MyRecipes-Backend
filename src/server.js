@@ -16,6 +16,9 @@ import { connectDb as dbConnectMidler } from "./midler/db.middler.js"
  
 const app = express();
 
+console.log("BASEPATH is:", env.BASEPATH);
+console.log("Full route would be:", `${env.BASEPATH}/user`);
+
 app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
