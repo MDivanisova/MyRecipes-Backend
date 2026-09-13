@@ -65,92 +65,99 @@ const loginService = async(email, password)=>{
     
 }
 
-const getUserBookmarksService = async(user, pageNumber, pageSize, filter)=>{
+const getUserBookmarksService = async (user, pageNumber, pageSize, filter) => {
 
-    const bookmarks = await bookmarkModel.find({user: user})
-                                                        .populate({
-                                                            path: "recepie",
-                                                            populate: {
-                                                                path: "creator"
-                                                            }
-                                                        })
-                                                        .sort({ createdAt: -1 });
+    const matchStage = { user: new mongoose.Types.ObjectId(user) };
 
-    const filteredBookmarks = bookmarks.filter(bookmark => {
+    const recepieFilters = {};
 
-            const recepie = bookmark.recepie;
-
-            if (
-                filter.name &&
-                !recepie.name.match(filter.name.$regex, filter.name.$options)
-            ) {
-                return false;
-            }
-
-            if (
-                filter.creator &&
-                recepie.creator._id.toString() !== filter.creator.toString()
-            ) {
-                return false;
-            }
-
-            if (
-                filter.category &&
-                !recepie.category.includes(filter.category)
-            ) {
-                return false;
-            }
-
-            if (
-                filter.cuisine &&
-                !recepie.cuisine.includes(filter.cuisine)
-            ) {
-                return false;
-            }
-
-            if (
-                filter.ingredients &&
-                !recepie.ingredients.some(ingredient =>
-                    ingredient.ingredient.match(
-                        filter.ingredients.$regex,
-                        filter.ingredients.$options
-                    )
-                )
-            ) {
-                return false;
-            }
-
-            return true;
-        });
-
-
-    
-    const skip = (pageNumber - 1)*pageSize;
-
-    const recepies = filteredBookmarks.slice(
-        skip,
-        skip + pageSize
-    );
-    
-    const numRecepies = filteredBookmarks.length;
-
-    const totalPages = Math.ceil(numRecepies / pageSize);
-    
-    return {
-        "msg": "bookmarked recepies were successfully fetched",
-        "result": {
-                recepies: recepies,
-                pagination: {
-                    numRecepies: numRecepies,
-                    totalPages: totalPages,
-                    pageNumber: pageNumber,
-                    pageSize: pageSize
-                }
-        },
-        "statusCode": 200
+    if (filter.name) {
+        recepieFilters["recepie.name"] = {
+            $regex: filter.name.$regex,
+            $options: filter.name.$options?.includes('i')
+                ? filter.name.$options
+                : (filter.name.$options || '') + 'i'
+        };
     }
 
-}
+    if (filter.creator) {
+        recepieFilters["recepie.creator._id"] = new mongoose.Types.ObjectId(filter.creator);
+    }
+
+    if (filter.category) {
+        recepieFilters["recepie.category"] = filter.category;
+    }
+
+    if (filter.cuisine) {
+        recepieFilters["recepie.cuisine"] = filter.cuisine;
+    }
+
+    if (filter.ingredients) {
+        recepieFilters["recepie.ingredients.ingredient"] = {
+            $regex: filter.ingredients.$regex,
+            $options: filter.ingredients.$options?.includes('i')
+                ? filter.ingredients.$options
+                : (filter.ingredients.$options || '') + 'i'
+        };
+    }
+
+    const skip = (pageNumber - 1) * pageSize;
+
+    const pipeline = [
+        { $match: matchStage },
+        {
+            $lookup: {
+                from: "recepies", // make sure this matches your actual collection name
+                localField: "recepie",
+                foreignField: "_id",
+                as: "recepie"
+            }
+        },
+        { $unwind: "$recepie" },
+        {
+            $lookup: {
+                from: "users", // make sure this matches your actual collection name
+                localField: "recepie.creator",
+                foreignField: "_id",
+                as: "recepie.creator"
+            }
+        },
+        { $unwind: "$recepie.creator" },
+        { $match: recepieFilters },
+        { $sort: { createdAt: -1 } },
+        {
+            $facet: {
+                data: [
+                    { $skip: skip },
+                    { $limit: pageSize }
+                ],
+                totalCount: [
+                    { $count: "count" }
+                ]
+            }
+        }
+    ];
+
+    const result = await bookmarkModel.aggregate(pipeline);
+
+    const recepies = result[0].data;
+    const numRecepies = result[0].totalCount[0]?.count || 0;
+    const totalPages = Math.ceil(numRecepies / pageSize);
+
+    return {
+        msg: "bookmarked recepies were successfully fetched",
+        result: {
+            recepies,
+            pagination: {
+                numRecepies,
+                totalPages,
+                pageNumber,
+                pageSize
+            }
+        },
+        statusCode: 200
+    };
+};
 
 const getUsersRecepiesService = async(user, pageNumber, pageSize, filter)=>{
 
