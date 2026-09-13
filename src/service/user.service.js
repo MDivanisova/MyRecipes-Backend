@@ -72,13 +72,11 @@ const getUserBookmarksService = async (user, pageNumber, pageSize, filter) => {
     const recepieFilters = {};
 
     if (filter.name) {
-    recepieFilters["recepie.name"] = {
-        $regex: `^${filter.name.$regex}`,
-        $options: filter.name.$options?.includes('i')
-            ? filter.name.$options
-            : (filter.name.$options || '') + 'i'
-    };
-}
+        recepieFilters["recepie.name"] = {
+            $regex: filter.name.$regex,
+            $options: filter.name.$options || 'i'
+        };
+    }
 
     if (filter.creator) {
         recepieFilters["recepie.creator._id"] = new mongoose.Types.ObjectId(filter.creator);
@@ -95,9 +93,7 @@ const getUserBookmarksService = async (user, pageNumber, pageSize, filter) => {
     if (filter.ingredients) {
         recepieFilters["recepie.ingredients.ingredient"] = {
             $regex: filter.ingredients.$regex,
-            $options: filter.ingredients.$options?.includes('i')
-                ? filter.ingredients.$options
-                : (filter.ingredients.$options || '') + 'i'
+            $options: filter.ingredients.$options || 'i'
         };
     }
 
@@ -107,7 +103,7 @@ const getUserBookmarksService = async (user, pageNumber, pageSize, filter) => {
         { $match: matchStage },
         {
             $lookup: {
-                from: "recepies", // make sure this matches your actual collection name
+                from: "recepies",
                 localField: "recepie",
                 foreignField: "_id",
                 as: "recepie"
@@ -116,13 +112,18 @@ const getUserBookmarksService = async (user, pageNumber, pageSize, filter) => {
         { $unwind: "$recepie" },
         {
             $lookup: {
-                from: "users", // make sure this matches your actual collection name
+                from: "users",
                 localField: "recepie.creator",
                 foreignField: "_id",
                 as: "recepie.creator"
             }
         },
-        { $unwind: "$recepie.creator" },
+        {
+            $unwind: {
+                path: "$recepie.creator",
+                preserveNullAndEmptyArrays: true // keep recepies with null/unknown creator
+            }
+        },
         { $match: recepieFilters },
         { $sort: { createdAt: -1 } },
         {

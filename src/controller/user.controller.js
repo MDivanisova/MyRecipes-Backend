@@ -21,47 +21,34 @@ const login = async(req, res)=>{
 }
 
 
-const getUserBookmarks = async(req, res)=>{
+const getUserBookmarks = async (req, res) => {
 
-    const pageNumber = parseInt(req.query.pageNumber);
-    const pageSize = parseInt(req.query.pageSize);
+    const pageNumber = parseInt(req.query.pageNumber) || 1;
+    const pageSize = parseInt(req.query.pageSize) || 10;
     const user = req.user._id;
 
     let filter = {};
-    if(req.query.name !== ""){
-        filter = {
-            ...filter,
-            name: { $regex: `^${req.query.name}`, $options: "i" }
-        }
-    }
-    if(req.query.creator !== ""){
-        filter = {
-            ...filter,
-            creator: req.query.creator
-        };
+
+    if (req.query.name) {
+        filter.name = { $regex: `^${req.query.name}`, $options: "i" };
     }
 
-    if(req.query.category !== "all"){
-        filter = {
-            ...filter,
-            category: req.query.category
-        }
+    if (req.query.creator) {
+        filter.creator = req.query.creator;
     }
 
-    if(req.query.cuisine !== "all"){
-        filter = {
-            ...filter,
-            cuisine: req.query.cuisine
-        }
+    if (req.query.category && req.query.category !== "all") {
+        filter.category = req.query.category;
     }
 
-     if(req.query.ingredients !== ""){
-        filter = {
-            ...filter,
-            ingredients: {
-                $regex: `^${req.query.ingredients}`,
-                $options: "i"
-            }
+    if (req.query.cuisine && req.query.cuisine !== "all") {
+        filter.cuisine = req.query.cuisine;
+    }
+
+    if (req.query.ingredients) {
+        filter.ingredients = {
+            $regex: `^${req.query.ingredients}`,
+            $options: "i"
         };
     }
 
@@ -70,8 +57,8 @@ const getUserBookmarks = async(req, res)=>{
     return res.status(response.statusCode).json({
         "msg": response.msg,
         "result": response.result
-    })
-}
+    });
+};
 
 const getUsersRecepies = async(req, res)=>{
 
