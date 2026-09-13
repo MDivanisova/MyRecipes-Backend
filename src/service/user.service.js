@@ -99,6 +99,10 @@ const getUserBookmarksService = async (user, pageNumber, pageSize, filter) => {
 
     const skip = (pageNumber - 1) * pageSize;
 
+    console.log(bookmarkModel.collection.collectionName);
+    console.log(recepieModel.collection.collectionName); // whatever your recipe model is called
+    console.log(userModel.collection.collectionName);
+
     const pipeline = [
         { $match: matchStage },
         {
