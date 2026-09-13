@@ -72,13 +72,13 @@ const getUserBookmarksService = async (user, pageNumber, pageSize, filter) => {
     const recepieFilters = {};
 
     if (filter.name) {
-        recepieFilters["recepie.name"] = {
-            $regex: filter.name.$regex,
-            $options: filter.name.$options?.includes('i')
-                ? filter.name.$options
-                : (filter.name.$options || '') + 'i'
-        };
-    }
+    recepieFilters["recepie.name"] = {
+        $regex: `^${filter.name.$regex}`,
+        $options: filter.name.$options?.includes('i')
+            ? filter.name.$options
+            : (filter.name.$options || '') + 'i'
+    };
+}
 
     if (filter.creator) {
         recepieFilters["recepie.creator._id"] = new mongoose.Types.ObjectId(filter.creator);
