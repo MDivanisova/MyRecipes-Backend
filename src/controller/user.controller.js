@@ -201,8 +201,9 @@ const getAllUsers = async(req, res)=>{
     
     const pageNumber = parseInt(req.query.pageNumber); 
     const pageSize = parseInt(req.query.pageSize);
+    const userId = req.user._id;
     
-    let filter = {}
+    let filter = {_id: { $ne: userId }};
     
 
     if(req.query.name !== ""){
