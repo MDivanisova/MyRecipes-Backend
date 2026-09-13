@@ -1018,26 +1018,41 @@ export const getAllRecommendationsService = async (
         };
     }
 
-    const numRecepies = recommendation.recommendations.length;
+    const matchingRecepies = await recepieModel.find({
+        ...filter,
+        _id: {
+            $in: recommendation.recommendations
+        }
+    })
+        .select("_id")
+        .lean();
+
+    const matchingIds = matchingRecepies.map(r => r._id.toString());
+
+    const orderedMatchingIds = recommendation.recommendations
+        .map(id => id.toString())
+        .filter(id => matchingIds.includes(id));
+
+    const numRecepies = orderedMatchingIds.length;
+
+    const totalPages = Math.ceil(numRecepies / pageSize);
 
     const skip = (pageNumber - 1) * pageSize;
 
-    const recommendedIds = recommendation.recommendations.slice(
-        skip,
-        skip + pageSize
-    );
+    const pageIds = orderedMatchingIds.slice(skip, skip + pageSize);
 
     const recepies = await recepieModel.find({
-        ...filter,
-        _id: {
-            $in: recommendedIds
-        }
+        _id: { $in: pageIds }
     })
         .populate("creator")
         .sort({
             createdAt: -1,
             name: 1
         });
+
+    const recepiesOrdered = pageIds
+        .map(id => recepies.find(r => r._id.toString() === id))
+        .filter(Boolean);
 
     const bookmarks = await bookmarkModel.find({
         user: userId
@@ -1047,24 +1062,15 @@ export const getAllRecommendationsService = async (
         bookmark.recepie.toString()
     );
 
-    const recepiesWithBookmark = recepies.map(recepie => ({
+    const recepiesWithBookmark = recepiesOrdered.map(recepie => ({
         ...recepie.toObject(),
-
-        isBookmarked: bookmarkedIds.includes(
-            recepie._id.toString()
-        )
+        isBookmarked: bookmarkedIds.includes(recepie._id.toString())
     }));
-
-    const totalPages = Math.ceil(
-        numRecepies / pageSize
-    );
 
     return {
         msg: "recommendations were successfully fetched",
-
         result: {
             recepies: recepiesWithBookmark,
-
             pagination: {
                 numRecepies,
                 totalPages,
@@ -1072,7 +1078,6 @@ export const getAllRecommendationsService = async (
                 pageSize
             }
         },
-
         statusCode: 200
     };
 };
