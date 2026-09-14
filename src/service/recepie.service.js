@@ -131,7 +131,7 @@ const getRecepieService = async(recepieId)=>{
 }
 
 const deleteRecepieService = async(recepieId, user)=>{
-    const existingUser = await userModel.find({_id:user}).populate("role");
+    const existingUser = await userModel.findOne({_id:user}).populate("role");
     const existingRecepie = await recepieModel.findOne({_id: recepieId});
     
     if(existingRecepie.creator != user && existingUser.role.roleName !== "admin" && existingUser.role.roleName !== "contentManager" ){
